@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Manual Store Assistant - Architecture Documentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2234;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-pink: #ec4899;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+        
+        h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .meta-info {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .meta-badge .icon {
+            font-size: 1rem;
+        }
+        
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin: 3rem 0 1.5rem;
+            padding-left: 1rem;
+            border-left: 4px solid var(--accent-cyan);
+            color: var(--text-primary);
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            color: var(--accent-blue);
+        }
+        
+        .diagram-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+        
+        .diagram-section .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+        
+        .description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .component-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .component-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .component-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .component-card li {
+            padding: 0.25rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .component-card li::before {
+            content: "→ ";
+            color: var(--accent-cyan);
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tag-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .tag-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-purple { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .tag-orange { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .tag-pink { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+        
+        td {
+            color: var(--text-secondary);
+        }
+        
+        td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+        }
+        
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+        
+        .flow-step-num {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        
+        .flow-step-content h5 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .flow-step-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🏪 Multi-Manual Store Assistant</h1>
+            <p class="subtitle">Architecture Documentation — LangGraph + ChromaDB + OpenAI</p>
+            <div class="meta-info">
+                <div class="meta-badge"><span class="icon">👤</span> Author: Tamasa Patra</div>
+                <div class="meta-badge"><span class="icon">🐍</span> Python 3.10+</div>
+                <div class="meta-badge"><span class="icon">🤖</span> GPT-4o-mini</div>
+                <div class="meta-badge"><span class="icon">🗄️</span> ChromaDB</div>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        <!-- ==================== SECTION 1: HIGH-LEVEL ARCHITECTURE ==================== -->
+        <h2>1. High-Level System Architecture</h2>
+        <div class="description">
+            Complete overview of the multi-manual store assistant showing all layers, components, and their interactions. 
+            The system processes multiple equipment manuals (Coffee Maker, Oven, Fryer, POS) and provides intelligent Q&A through both CLI and Web interfaces.
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+flowchart TB
+    subgraph USER["👤 USER INTERFACE LAYER"]
+        direction LR
+        CLI["🖥️ CLI<br/><code>main.py</code>"]
+        WEB["🌐 Streamlit<br/><code>app.py</code>"]
+    end
+
+    subgraph CONFIG["⚙️ CONFIGURATION"]
+        direction LR
+        SETTINGS["📋 Settings<br/><code>settings.py</code>"]
+        REGISTRY["📚 Manual Registry<br/><code>manual_registry.py</code>"]
+        ENV["🔐 .env"]
+    end
+
+    subgraph ORCHESTRATION["🎯 ORCHESTRATION LAYER"]
+        direction TB
+        RAG["🧠 LangGraph RAG<br/><code>langgraph_workflow.py</code>"]
+        MANAGER["📦 Manual Manager<br/><code>manual_manager.py</code>"]
+    end
+
+    subgraph PROCESSING["🔧 PROCESSING LAYER"]
+        DOC_PROC["📄 Document Processor<br/><code>document_processor.py</code>"]
+    end
+
+    subgraph VECTOR["🗄️ VECTOR STORE"]
+        CHROMA_MGR["💾 ChromaDB Manager<br/><code>chroma_client.py</code>"]
+        CHROMA_DB[("🗃️ ChromaDB<br/><code>./chroma_db</code>")]
+    end
+
+    subgraph EXTERNAL["☁️ EXTERNAL APIs"]
+        direction LR
+        LLM["🤖 OpenAI GPT-4o-mini"]
+        EMB["🔮 text-embedding-3-small"]
+    end
+
+    subgraph DATA["📁 MANUALS"]
+        direction LR
+        M1["☕ Coffee<br/>Metos"]
+        M2["🍳 Kitchen<br/>Vulcan/Pitco"]
+        M3["💳 POS<br/>V400m"]
+    end
+
+    CLI --> RAG
+    CLI --> MANAGER
+    WEB --> RAG
+    
+    ENV -.-> SETTINGS
+    SETTINGS --> RAG
+    SETTINGS --> DOC_PROC
+    SETTINGS --> CHROMA_MGR
+    REGISTRY --> MANAGER
+    
+    MANAGER --> DOC_PROC
+    RAG --> CHROMA_MGR
+    DOC_PROC --> CHROMA_MGR
+    CHROMA_MGR --> CHROMA_DB
+    
+    RAG --> LLM
+    CHROMA_MGR --> EMB
+    
+    DATA --> DOC_PROC
+    M1 --> DOC_PROC
+    M2 --> DOC_PROC
+    M3 --> DOC_PROC
+
+    style USER fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px
+    style CONFIG fill:#3d2e1f,stroke:#f59e0b,stroke-width:2px
+    style ORCHESTRATION fill:#1a3a2e,stroke:#10b981,stroke-width:2px
+    style PROCESSING fill:#2d1f3d,stroke:#8b5cf6,stroke-width:2px
+    style VECTOR fill:#1a3d3d,stroke:#06b6d4,stroke-width:2px
+    style EXTERNAL fill:#3d1f2d,stroke:#ec4899,stroke-width:2px
+    style DATA fill:#3d3d1a,stroke:#eab308,stroke-width:2px
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 2: DATA FLOW ==================== -->
+        <h2>2. Data Flow Architecture</h2>
+        <div class="description">
+            This diagram shows how data flows through the system during two primary operations: 
+            <strong>Indexing</strong> (processing PDFs into vectors) and <strong>Querying</strong> (answering user questions).
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+flowchart LR
+    subgraph INDEXING["📥 INDEXING PIPELINE"]
+        direction TB
+        PDF["📄 PDF Files"] --> EXTRACT["Extract Text<br/>+ Page Tracking"]
+        EXTRACT --> CHUNK["Chunk with<br/>Overlap"]
+        CHUNK --> META["Add Metadata<br/>• equipment_type<br/>• equipment_brand<br/>• page_number"]
+        META --> EMBED["Generate<br/>Embeddings"]
+        EMBED --> STORE["Store in<br/>ChromaDB"]
+    end
+
+    subgraph QUERY["🔍 QUERY PIPELINE"]
+        direction TB
+        Q["User Query"] --> DETECT["Detect Equipment<br/>Brand/Type"]
+        DETECT --> QEMBED["Query<br/>Embedding"]
+        QEMBED --> SEARCH["Vector Search<br/>+ Filters"]
+        SEARCH --> GRADE["Relevance<br/>Grading"]
+        GRADE --> GEN["Answer<br/>Generation"]
+        GEN --> RESP["Response<br/>+ Sources"]
+    end
+
+    STORE -.->|"Indexed Vectors"| SEARCH
+
+    style INDEXING fill:#1a2e1a,stroke:#22c55e,stroke-width:2px
+    style QUERY fill:#1a1a2e,stroke:#6366f1,stroke-width:2px
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 3: CLASS DIAGRAM ==================== -->
+        <h2>3. Class Diagram</h2>
+        <div class="description">
+            Object-oriented structure showing the main classes, their attributes, methods, and relationships.
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+classDiagram
+    class ManualDefinition {
+        +str pdf_path
+        +str equipment_type
+        +str equipment_brand
+        +str equipment_model
+        +str manual_type
+        +str title
+        +str language
+        +int tier
+        +to_metadata() Dict
+        +exists() bool
+    }
+
+    class ManualRegistry {
+        -List~ManualDefinition~ manuals
+        +get_all_manuals() List
+        +get_available_manuals() List
+        +get_missing_manuals() List
+        +get_by_equipment_type(type) List
+        +get_by_tier(tier) List
+        +validate_manuals() Dict
+    }
+
+    class Settings {
+        +str openai_api_key
+        +str openai_model
+        +str openai_embedding_model
+        +str chroma_persist_directory
+        +str chroma_collection_name
+        +int chunk_size
+        +int chunk_overlap
+        +int retrieval_top_k
+        +float relevance_threshold
+        +int max_retries
+    }
+
+    class DocumentProcessor {
+        -TextSplitter text_splitter
+        +extract_text_from_pdf(path) Tuple
+        +chunk_document(text, page_map, metadata) List
+        +process_pdf(path, metadata) List
+        -_find_page_for_position(pos, page_map) int
+    }
+
+    class ChromaDBManager {
+        -PersistentClient client
+        -OpenAIEmbeddings embeddings
+        -Collection collection
+        +str collection_name
+        +create_collection(reset) void
+        +index_documents(documents) void
+        +search(query, top_k, brand, type) List
+        +get_collection_stats() Dict
+        +delete_collection() void
+        +debug_metadata(where, limit) void
+        -_sanitize_metadata(metadata) Dict
+        -_run_query(filter, n) List
+    }
+
+    class CoffeeMakerRAG {
+        -ChromaDBManager chroma_manager
+        -ChatOpenAI llm
+        -StateGraph workflow
+        +query(question, short_ctx, is_followup) Dict
+    }
+
+    class ManualManager {
+        -DocumentProcessor processor
+        -ChromaDBManager chroma_manager
+        +process_multiple_manuals(manuals, reset) Dict
+    }
+
+    ManualRegistry "1" *-- "*" ManualDefinition : contains
+    ManualManager --> ManualRegistry : uses
+    ManualManager --> DocumentProcessor : uses
+    ManualManager --> ChromaDBManager : uses
+    CoffeeMakerRAG --> ChromaDBManager : uses
+    ChromaDBManager --> Settings : uses
+    DocumentProcessor --> Settings : uses
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 4: QUERY SEQUENCE ==================== -->
+        <h2>4. Query Processing Sequence</h2>
+        <div class="description">
+            Detailed sequence diagram showing the step-by-step flow when a user asks a question through the Streamlit interface.
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as 👤 User
+    participant ST as 🌐 Streamlit
+    participant RAG as 🧠 CoffeeMakerRAG
+    participant CM as 💾 ChromaDBManager
+    participant OE as 🔮 OpenAI Embeddings
+    participant DB as 🗃️ ChromaDB
+    participant LLM as 🤖 GPT-4o-mini
+
+    U->>ST: Enter question
+    ST->>ST: detect_equipment_in_query()
+    ST->>ST: is_followup_message()
+    
+    alt Is Follow-up
+        ST->>ST: Use existing short_ctx
+    else New Question
+        ST->>ST: Reset context
+    end
+    
+    ST->>RAG: query(question, short_ctx, is_followup)
+    
+    RAG->>CM: search(query, brand, type)
+    CM->>OE: embed_query(question)
+    OE-->>CM: Query embedding vector
+    
+    CM->>DB: query(embedding, filters)
+    
+    alt Strict Filter (brand + type)
+        DB-->>CM: Results
+    else Fallback: Type Only
+        CM->>DB: query(type_only)
+        DB-->>CM: Results
+    else Fallback: No Filter
+        CM->>DB: query(no_filter)
+        DB-->>CM: Results
+    end
+    
+    CM-->>RAG: Retrieved documents
+    
+    RAG->>LLM: Grade relevance
+    LLM-->>RAG: Relevance scores
+    
+    alt Sufficient relevant docs
+        RAG->>LLM: Generate answer
+        LLM-->>RAG: Answer
+    else Retry needed
+        RAG->>CM: Re-search with adjusted params
+        CM-->>RAG: More documents
+        RAG->>LLM: Generate answer
+        LLM-->>RAG: Answer
+    end
+    
+    RAG-->>ST: {answer, documents, retries}
+    ST->>ST: Update short_ctx
+    ST->>ST: Extract follow-up options
+    ST-->>U: Display answer
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 5: INDEXING SEQUENCE ==================== -->
+        <h2>5. Indexing Pipeline Sequence</h2>
+        <div class="description">
+            Sequence diagram showing how PDF manuals are processed and indexed into ChromaDB during the setup phase.
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant CLI as 🖥️ CLI (main.py)
+    participant REG as 📚 ManualRegistry
+    participant MGR as 📦 ManualManager
+    participant DP as 📄 DocumentProcessor
+    participant CM as 💾 ChromaDBManager
+    participant OE as 🔮 OpenAI Embeddings
+    participant DB as 🗃️ ChromaDB
+
+    CLI->>REG: validate_manuals()
+    REG-->>CLI: {available, missing}
+    
+    CLI->>CLI: Display manual inventory
+    CLI->>CLI: Confirm with user
+    
+    CLI->>MGR: process_multiple_manuals(manuals, reset=True)
+    
+    loop For each ManualDefinition
+        MGR->>DP: process_pdf(pdf_path, metadata)
+        
+        DP->>DP: extract_text_from_pdf()
+        Note over DP: Build page_map<br/>{page_num: (start, end)}
+        
+        DP->>DP: chunk_document()
+        Note over DP: RecursiveCharacterTextSplitter<br/>chunk_size=1200, overlap=400
+        
+        DP->>DP: _find_page_for_position()
+        Note over DP: Assign page numbers<br/>to each chunk
+        
+        DP-->>MGR: List[{content, metadata}]
+    end
+    
+    MGR->>CM: create_collection(reset=True)
+    CM->>DB: delete_collection()
+    CM->>DB: create_collection()
+    
+    MGR->>CM: index_documents(all_chunks)
+    
+    CM->>CM: _sanitize_metadata()
+    Note over CM: Remove None values<br/>Convert types to str
+    
+    CM->>OE: embed_documents(contents)
+    OE-->>CM: Embedding vectors
+    
+    loop Batch of 100
+        CM->>DB: add(ids, embeddings, docs, metadata)
+    end
+    
+    CM-->>MGR: Success
+    MGR-->>CLI: Summary stats
+    CLI->>CLI: Display "✅ Setup complete!"
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 6: SEARCH FALLBACK ==================== -->
+        <h2>6. Search Fallback Logic</h2>
+        <div class="description">
+            The ChromaDB search implements a cascading fallback strategy to ensure relevant results even when equipment detection is imperfect.
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+flowchart TB
+    START["🔍 search(query, brand, type)"] --> BUILD["Build Filter:<br/>brand + type"]
+    BUILD --> Q1{"Query with<br/>brand + type"}
+    
+    Q1 -->|"results > 0"| DONE["✅ Return Results"]
+    Q1 -->|"results = 0"| FALLBACK1["⚠️ Fallback 1"]
+    
+    FALLBACK1 --> Q2{"Query with<br/>type only"}
+    
+    Q2 -->|"results > 0"| DONE
+    Q2 -->|"results = 0"| FALLBACK2["⚠️ Fallback 2"]
+    
+    FALLBACK2 --> Q3{"Query with<br/>NO filters"}
+    
+    Q3 -->|"results > 0"| DONE
+    Q3 -->|"results = 0"| EMPTY["❌ No Results<br/>Pure semantic match failed"]
+
+    style START fill:#1e3a5f,stroke:#3b82f6
+    style DONE fill:#1a3a2e,stroke:#22c55e
+    style EMPTY fill:#3d1f1f,stroke:#ef4444
+    style FALLBACK1 fill:#3d3d1a,stroke:#eab308
+    style FALLBACK2 fill:#3d2e1a,stroke:#f97316
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 7: FOLLOW-UP DETECTION ==================== -->
+        <h2>7. Follow-up Detection Logic (app.py)</h2>
+        <div class="description">
+            The Streamlit UI implements sophisticated follow-up detection to maintain conversation context while correctly identifying when the user switches to a different equipment topic.
+        </div>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+flowchart TB
+    INPUT["📝 User Input"] --> DETECT["detect_equipment_in_query()"]
+    DETECT --> CHECK_BRAND{"Detected brand<br/>≠ last_brand?"}
+    
+    CHECK_BRAND -->|"Yes"| NEW["🔄 NEW QUESTION<br/>Reset context"]
+    CHECK_BRAND -->|"No"| CHECK_TYPE{"Detected type<br/>≠ last_type?"}
+    
+    CHECK_TYPE -->|"Yes"| NEW
+    CHECK_TYPE -->|"No"| CHECK_EXPLICIT{"Brand/type detected<br/>but no prior context?"}
+    
+    CHECK_EXPLICIT -->|"Yes"| NEW
+    CHECK_EXPLICIT -->|"No"| CHECK_SHORT{"Word count ≤ 6?"}
+    
+    CHECK_SHORT -->|"Yes"| FOLLOWUP["✅ FOLLOW-UP<br/>Use short_ctx"]
+    CHECK_SHORT -->|"No"| CHECK_PATTERN{"Matches follow-up<br/>patterns?"}
+    
+    CHECK_PATTERN -->|"Yes + no new equip"| FOLLOWUP
+    CHECK_PATTERN -->|"No"| NEW
+
+    subgraph PATTERNS["📋 Follow-up Patterns"]
+        P1["• yes/no/yeah/ok/done"]
+        P2["• it/this/that (pronouns)"]
+        P3["• powered on/off"]
+        P4["• blinking/flashing"]
+        P5["• i did/i tried/i can't"]
+        P6["• error/code/message"]
+    end
+
+    style NEW fill:#1e3a5f,stroke:#3b82f6
+    style FOLLOWUP fill:#1a3a2e,stroke:#22c55e
+    style PATTERNS fill:#2d1f3d,stroke:#8b5cf6
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 8: FILE STRUCTURE ==================== -->
+        <h2>8. Project File Structure</h2>
+        
+        <div class="diagram-section">
+            <pre class="mermaid">
+graph LR
+    subgraph ROOT["📁 Project Root"]
+        direction TB
+        MAIN["main.py"]
+        APP["app.py"]
+        REQ["requirements.txt"]
+        ENVF[".env"]
+        
+        subgraph CONFIG_DIR["📁 config/"]
+            SETTINGS_F["settings.py"]
+            REGISTRY_F["manual_registry.py"]
+        end
+        
+        subgraph SRC_DIR["📁 src/"]
+            CHROMA_F["chroma_client.py"]
+            DOC_F["document_processor.py"]
+            LANG_F["langgraph_workflow.py"]
+            MANUAL_F["manual_manager.py"]
+            subgraph ASSETS["📁 assets/"]
+                SHOP["shop.jpg"]
+            end
+        end
+        
+        subgraph MANUALS_DIR["📁 Manuals/"]
+            subgraph COFFEE_DIR["📁 coffee/"]
+                COFFEE_PDF["Coffee Maker Manual.pdf"]
+            end
+            subgraph KITCHEN_DIR["📁 kitchen/"]
+                VULCAN_PDF["Vulcan Installation & Operation Manual.pdf"]
+                PITCO_PDF["Pitco Fryer Manual.pdf"]
+            end
+            subgraph POS_DIR["📁 pos/"]
+                POS_PDF["V400m POS Manual.pdf"]
+            end
+        end
+        
+        subgraph CHROMA_DIR["📁 chroma_db/"]
+            CHROMA_DATA["(Persisted Vector Data)"]
+        end
+    end
+
+    style ROOT fill:#1a2234,stroke:#334155
+    style CONFIG_DIR fill:#3d2e1f,stroke:#f59e0b
+    style SRC_DIR fill:#1a3a2e,stroke:#10b981
+    style MANUALS_DIR fill:#3d3d1a,stroke:#eab308
+    style CHROMA_DIR fill:#1a3d3d,stroke:#06b6d4
+            </pre>
+        </div>
+
+        <!-- ==================== SECTION 9: COMPONENT DETAILS ==================== -->
+        <h2>9. Component Details</h2>
+        
+        <div class="grid-2">
+            <div class="component-card">
+                <h4>📋 config/settings.py</h4>
+                <span class="tag tag-orange">Configuration</span>
+                <span class="tag tag-blue">Pydantic</span>
+                <ul>
+                    <li>load_dotenv() from .env</li>
+                    <li>BaseSettings with validation</li>
+                    <li>OpenAI credentials</li>
+                    <li>ChromaDB paths</li>
+                    <li>RAG hyperparameters</li>
+                </ul>
+            </div>
+            
+            <div class="component-card">
+                <h4>📚 config/manual_registry.py</h4>
+                <span class="tag tag-orange">Configuration</span>
+                <span class="tag tag-purple">Dataclass</span>
+                <ul>
+                    <li>ManualDefinition dataclass</li>
+                    <li>pdf_path, equipment_type, brand, model</li>
+                    <li>tier-based prioritization</li>
+                    <li>to_metadata() for ChromaDB</li>
+                    <li>Singleton manual_registry instance</li>
+                </ul>
+            </div>
+            
+            <div class="component-card">
+                <h4>📄 src/document_processor.py</h4>
+                <span class="tag tag-purple">Processing</span>
+                <span class="tag tag-green">PyPDF2</span>
+                <ul>
+                    <li>extract_text_from_pdf()</li>
+                    <li>Page position tracking</li>
+                    <li>RecursiveCharacterTextSplitter</li>
+                    <li>chunk_size=1200, overlap=400</li>
+                    <li>_find_page_for_position()</li>
+                </ul>
+            </div>
+            
+            <div class="component-card">
+                <h4>💾 src/chroma_client.py</h4>
+                <span class="tag tag-blue">Vector DB</span>
+                <span class="tag tag-green">ChromaDB</span>
+                <ul>
+                    <li>PersistentClient with cosine similarity</li>
+                    <li>UUID-based chunk IDs</li>
+                    <li>Batch indexing (size=100)</li>
+                    <li>Cascading search fallbacks</li>
+                    <li>_sanitize_metadata()</li>
+                </ul>
+            </div>
+            
+            <div class="component-card">
+                <h4>🧠 src/langgraph_workflow.py</h4>
+                <span class="tag tag-pink">Orchestration</span>
+                <span class="tag tag-blue">LangGraph</span>
+                <ul>
+                    <li>CoffeeMakerRAG class</li>
+                    <li>StateGraph workflow</li>
+                    <li>Query routing & processing</li>
+                    <li>Relevance grading</li>
+                    <li>Retry logic (max_retries=3)</li>
+                </ul>
+            </div>
+            
+            <div class="component-card">
+                <h4>🌐 app.py</h4>
+                <span class="tag tag-blue">UI</span>
+                <span class="tag tag-green">Streamlit</span>
+                <ul>
+                    <li>Chat interface with history</li>
+                    <li>Session state management</li>
+                    <li>Follow-up detection</li>
+                    <li>Equipment context tracking</li>
+                    <li>Numbered input expansion</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ==================== SECTION 10: CONFIG TABLE ==================== -->
+        <h2>10. Configuration Parameters</h2>
+        
+        <div class="diagram-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Default</th>
+                        <th>.env Override</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>openai_model</td>
+                        <td>gpt-4o-mini</td>
+                        <td>OPENAI_MODEL</td>
+                        <td>LLM for answer generation</td>
+                    </tr>
+                    <tr>
+                        <td>openai_embedding_model</td>
+                        <td>text-embedding-3-small</td>
+                        <td>OPENAI_EMBEDDING_MODEL</td>
+                        <td>Model for vector embeddings</td>
+                    </tr>
+                    <tr>
+                        <td>chroma_persist_directory</td>
+                        <td>./chroma_db</td>
+                        <td>CHROMA_PERSIST_DIRECTORY</td>
+                        <td>ChromaDB storage location</td>
+                    </tr>
+                    <tr>
+                        <td>chunk_size</td>
+                        <td>1000</td>
+                        <td>1200</td>
+                        <td>Characters per chunk</td>
+                    </tr>
+                    <tr>
+                        <td>chunk_overlap</td>
+                        <td>200</td>
+                        <td>400</td>
+                        <td>Overlap between chunks</td>
+                    </tr>
+                    <tr>
+                        <td>retrieval_top_k</td>
+                        <td>15</td>
+                        <td>8</td>
+                        <td>Number of chunks to retrieve</td>
+                    </tr>
+                    <tr>
+                        <td>relevance_threshold</td>
+                        <td>0.7</td>
+                        <td>0.5</td>
+                        <td>Minimum similarity score</td>
+                    </tr>
+                    <tr>
+                        <td>max_retries</td>
+                        <td>3</td>
+                        <td>3</td>
+                        <td>Max retry attempts for RAG</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== SECTION 11: MANUAL INVENTORY ==================== -->
+        <h2>11. Equipment Manual Inventory</h2>
+        
+        <div class="diagram-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Type</th>
+                        <th>Tier</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>☕ Coffee Maker</td>
+                        <td>Metos</td>
+                        <td>M200 / MT200</td>
+                        <td>operation</td>
+                        <td><span class="tag tag-green">1</span></td>
+                        <td>Manuals/coffee/</td>
+                    </tr>
+                    <tr>
+                        <td>🔥 Oven</td>
+                        <td>Vulcan</td>
+                        <td>VC4GD</td>
+                        <td>operation</td>
+                        <td><span class="tag tag-blue">2</span></td>
+                        <td>Manuals/kitchen/</td>
+                    </tr>
+                    <tr>
+                        <td>🍟 Fryer</td>
+                        <td>Pitco</td>
+                        <td>SG14</td>
+                        <td>operation</td>
+                        <td><span class="tag tag-blue">2</span></td>
+                        <td>Manuals/kitchen/</td>
+                    </tr>
+                    <tr>
+                        <td>💳 POS Terminal</td>
+                        <td>V400m</td>
+                        <td>V400m</td>
+                        <td>software</td>
+                        <td><span class="tag tag-purple">3</span></td>
+                        <td>Manuals/pos/</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== SECTION 12: DATA FLOW STEPS ==================== -->
+        <h2>12. End-to-End Data Flow</h2>
+        
+        <h3>Indexing Flow (Setup)</h3>
+        <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <div class="flow-step-content">
+                <h5>Manual Validation</h5>
+                <p><code>ManualRegistry.validate_manuals()</code> checks which PDFs exist on disk</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <div class="flow-step-content">
+                <h5>PDF Extraction</h5>
+                <p><code>DocumentProcessor.extract_text_from_pdf()</code> extracts text with page position tracking</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <div class="flow-step-content">
+                <h5>Chunking</h5>
+                <p><code>RecursiveCharacterTextSplitter</code> splits text into overlapping chunks (1200 chars, 400 overlap)</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <div class="flow-step-content">
+                <h5>Metadata Enrichment</h5>
+                <p>Each chunk gets: <code>equipment_type</code>, <code>equipment_brand</code>, <code>page_number</code>, <code>title</code></p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">5</div>
+            <div class="flow-step-content">
+                <h5>Embedding Generation</h5>
+                <p><code>text-embedding-3-small</code> converts chunk text to 1536-dimensional vectors</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">6</div>
+            <div class="flow-step-content">
+                <h5>Vector Storage</h5>
+                <p>ChromaDB stores vectors with HNSW index (cosine similarity) in batches of 100</p>
+            </div>
+        </div>
+
+        <h3>Query Flow (Runtime)</h3>
+        <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <div class="flow-step-content">
+                <h5>Input Processing</h5>
+                <p>Streamlit receives input, expands numbered shortcuts, detects equipment mentions</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <div class="flow-step-content">
+                <h5>Follow-up Detection</h5>
+                <p><code>is_followup_message()</code> determines if context should be maintained or reset</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <div class="flow-step-content">
+                <h5>Query Embedding</h5>
+                <p>User question converted to vector via OpenAI embeddings</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <div class="flow-step-content">
+                <h5>Vector Search</h5>
+                <p>ChromaDB similarity search with cascading fallbacks: brand+type → type → none</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">5</div>
+            <div class="flow-step-content">
+                <h5>Relevance Grading</h5>
+                <p>LangGraph workflow grades retrieved documents, retries if insufficient</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">6</div>
+            <div class="flow-step-content">
+                <h5>Answer Generation</h5>
+                <p>GPT-4o-mini generates answer using relevant context + conversation history</p>
+            </div>
+        </div>
+        <div class="flow-step">
+            <div class="flow-step-num">7</div>
+            <div class="flow-step-content">
+                <h5>Context Update</h5>
+                <p><code>short_ctx</code> updated with question, answer, equipment info for next turn</p>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>Multi-Manual Store Assistant Architecture Documentation</p>
+        <p>Author: Tamasa Patra | Stack: LangGraph + ChromaDB + OpenAI</p>
+    </footer>
+    
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#f1f5f9',
+                primaryBorderColor: '#60a5fa',
+                lineColor: '#64748b',
+                secondaryColor: '#10b981',
+                tertiaryColor: '#8b5cf6',
+                background: '#1a2234',
+                mainBkg: '#1e293b',
+                secondBkg: '#334155',
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
+                fontSize: '14px'
+            },
+            flowchart: {
+                curve: 'basis',
+                padding: 20
+            },
+            sequence: {
+                actorMargin: 50,
+                messageMargin: 40
+            }
+        });
+    </script>
+</body>
+</html>
