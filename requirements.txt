@@ -1,0 +1,21 @@
+# Core Dependencies
+langgraph==0.0.26
+langchain==0.1.16
+langchain-openai==0.0.8
+langchain-community==0.0.38
+
+# Vector Database
+chromadb==0.4.22
+
+# Document Processing
+PyPDF2==3.0.1
+pypdf==4.0.1
+
+# Utilities
+python-dotenv==1.0.0
+tiktoken==0.5.2
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Optional: For better PDF extraction
+unstructured==0.12.0
